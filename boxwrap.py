@@ -1,5 +1,4 @@
 from gimpfu import *
-from enum import Enum
 
 
 # We are assuming a 300 dpi images
@@ -30,7 +29,7 @@ class DefaultContext:
         return False
 
 
-class Corner(Enum):
+class Corner:
     TOP_LEFT = 1
     TOP_RIGHT = 2
     BOTTOM_LEFT = 3
@@ -38,7 +37,7 @@ class Corner(Enum):
     CENTER = 5
 
 
-class Direction(Enum):
+class Direction:
     LEFT = 1
     RIGHT = 2
     UP = 3
