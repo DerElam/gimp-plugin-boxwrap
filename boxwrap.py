@@ -265,7 +265,7 @@ def create_template(box_width_mm, box_height_mm, box_depth_mm):
 
         with PausedUndo(image):
             layer = gimp.Layer(image, "Template", image_width, image_height,
-                                RGBA_IMAGE, 100, NORMAL_MODE)
+                               RGBA_IMAGE, 100, NORMAL_MODE)
             image.add_layer(layer, 0)
 
             # Create guides
@@ -293,7 +293,7 @@ def create_template(box_width_mm, box_height_mm, box_depth_mm):
                     image, text, "sans-serif", text_size, PIXELS)
                 image.add_layer(text_layer, 0)
                 move_drawable_to(text_layer, Corner.CENTER,
-                                    (left + right) // 2, (top + bottom) // 2)
+                                 (left + right) // 2, (top + bottom) // 2)
                 pdb.gimp_image_merge_down(
                     image, text_layer, CLIP_TO_BOTTOM_LAYER)
 
@@ -304,12 +304,12 @@ def create_template(box_width_mm, box_height_mm, box_depth_mm):
             put_text("BACK", xs[3], xs[4], ys[1], ys[3])
             put_text("BOTTOM", xs[1], xs[2], ys[3], ys[4])
             put_text("Box width: %dmm (%dpx)\n"
-                        "Box height: %dmm (%dpx)\n"
-                        "Box depth: %dmm (%dpx)" %
-                        (box_width_mm, box_width,
-                        box_height_mm, box_height,
-                        box_depth_mm, box_depth),
-                        xs[0], xs[1], ys[0], ys[1])
+                     "Box height: %dmm (%dpx)\n"
+                     "Box depth: %dmm (%dpx)" %
+                     (box_width_mm, box_width,
+                      box_height_mm, box_height,
+                      box_depth_mm, box_depth),
+                     xs[0], xs[1], ys[0], ys[1])
 
             gimp.Display(image)
     gimp.displays_flush()
@@ -345,8 +345,8 @@ def create_wraps(src_image,
     dst_image_height = dst_ys[-1] - dst_ys[0]
 
     # Make sure we have the right dimensions
-    if (src_image.width != src_image_width or
-        src_image.height != src_image_height):
+    if src_image.width != src_image_width or \
+       src_image.height != src_image_height:
         gimp.message("Template image has the wrong size. "
                      "Expected %dpx x %dpx (%dmm x %dmm) "
                      "but got %dpx x %dpx (%dmm x %dmm)."
@@ -505,7 +505,7 @@ register(
     plugin_menu + "Create empty template...",
     "",
     [
-        (PF_ADJUSTMENT, "width", "Box width [mm]", 75, (10, 500,  1)),
+        (PF_ADJUSTMENT, "width", "Box width [mm]", 75, (10, 500, 1)),
         (PF_ADJUSTMENT, "height", "Box height [mm]", 104, (10, 500, 1)),
         (PF_ADJUSTMENT, "depth", "Box depth [mm]", 100, (10, 500, 1))
     ],
@@ -528,7 +528,7 @@ register(
     "RGB*",
     [
         (PF_IMAGE, "image", "Template with six layers", 0),
-        (PF_ADJUSTMENT, "width", "Box width [mm]", 75, (10, 500,  1)),
+        (PF_ADJUSTMENT, "width", "Box width [mm]", 75, (10, 500, 1)),
         (PF_ADJUSTMENT, "height", "Box height [mm]", 104, (10, 500, 1)),
         (PF_ADJUSTMENT, "depth", "Box depth [mm]", 100, (10, 500, 1)),
         (PF_ADJUSTMENT, "thickness",
