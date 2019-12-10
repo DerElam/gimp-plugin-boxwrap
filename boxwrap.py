@@ -1,19 +1,25 @@
-"""This is a plugin for GIMP that assists in creating a printable wrap for board game boxes."""
+"""This is a plugin for GIMP that assists in creating a printable
+wrap for board game boxes.
+"""
 
+from typing import List, Tuple
 from gimpfu import gimp, pdb
 import gimpfu
 
 
 # We are assuming a 300 dpi images
-DPI = 300
+DPI = 300.0  # type: float
 
 
 class PausedUndo:
     """Context guard that temporarily disables the undo history."""
+
     def __init__(self, image):
+        # type: (gimp.Image) -> None
         self.image = image
 
     def __enter__(self):
+        # type: () -> None
         self.image.disable_undo()
 
     def __exit__(self, exception_type, value, traceback):
@@ -23,7 +29,9 @@ class PausedUndo:
 
 class DefaultContext:
     """Context guard that restores the current gimp context at the end."""
+
     def __enter__(self):
+        # type: () -> None
         gimp.context_push()
         pdb.gimp_context_set_defaults()
 
@@ -34,38 +42,50 @@ class DefaultContext:
 
 class Corner:
     """Enumerates four corners and the center of a rectangle."""
-    TOP_LEFT = 1
-    TOP_RIGHT = 2
-    BOTTOM_LEFT = 3
-    BOTTOM_RIGHT = 4
-    CENTER = 5
+
+    TOP_LEFT = 1                # type: int
+    TOP_RIGHT = 2               # type: int
+    BOTTOM_LEFT = 3             # type: int
+    BOTTOM_RIGHT = 4            # type: int
+    CENTER = 5                  # type: int
 
 
 class Direction:
     """Enumerates the four principal directions on a page."""
-    LEFT = 1
-    RIGHT = 2
-    UP = 3
-    DOWN = 4
+
+    LEFT = 1                    # type: int
+    RIGHT = 2                   # type: int
+    UP = 3                      # type: int
+    DOWN = 4                    # type: int
 
 
 def mm_to_px(mm):
+    # type: (float) -> int
     """Converts pixels to millimeters."""
+
     return int(round(mm / 25.4 * DPI))
 
 
 def px_to_mm(px):
+    # type: (float) -> float
     """Converts millimeters to pixels."""
+
     return (px * 25.4) / DPI
 
 
-def move_drawable_to(drawable, corner, x, y):
+def move_drawable_to(drawable,  # type: gimp.Image
+                     corner,    # type: Corner
+                     x,         # type: int
+                     y          # type: int
+                     ):
+    # type: (...) -> None
     """Moves a corner of a drawable to the position (x, y)."""
-    left, top = pdb.gimp_drawable_offsets(drawable)
-    width, height = pdb.gimp_drawable_mask_bounds(drawable)[3:]
-    right = left + width
-    bottom = top + height
-    dx, dy = 0, 0
+
+    left, top = pdb.gimp_drawable_offsets(drawable)              # type: int, int
+    width, height = pdb.gimp_drawable_mask_bounds(drawable)[3:]  # type: int, int
+    right = left + width                                         # type: int
+    bottom = top + height                                        # type: int
+    dx, dy = 0, 0                                                # type: int
     if corner == Corner.TOP_LEFT:
         dx = x - left
         dy = y - top
@@ -87,37 +107,59 @@ def move_drawable_to(drawable, corner, x, y):
     pdb.gimp_layer_translate(drawable, dx, dy)
 
 
-def copy_and_rotate_rectangle(src_image, src_x, src_y, src_width, src_height,
-                              dst_image, dst_layer, dst_x, dst_y, dst_corner,
-                              angle):
-    """Copies a rectangular region from one image to another while also rotating it."""
+def copy_and_rotate_rectangle(src_image,   # type: gimp.Image
+                              src_x,       # type: int
+                              src_y,       # type: int
+                              src_width,   # type: int
+                              src_height,  # type: int
+                              dst_image,   # type: gimp.Image
+                              dst_layer,   # type: gimp.Layer
+                              dst_x,       # type: int
+                              dst_y,       # type: int
+                              dst_corner,  # type: Corner
+                              angle        # type: int
+                              ):
+    # type: (...) -> None
+    """Copies a rectangular region from one image to another while also
+    rotating it.
+    """
+
     pdb.gimp_image_select_rectangle(src_image, gimpfu.CHANNEL_OP_REPLACE,
                                     src_x, src_y, src_width, src_height)
     pdb.gimp_edit_copy_visible(src_image)
     pdb.gimp_selection_none(src_image)
 
     # Paste into dst as a floating selection
-    floating = pdb.gimp_edit_paste(dst_layer, gimpfu.TRUE)
+    floating = pdb.gimp_edit_paste(dst_layer, gimpfu.TRUE)  # type: gimp.Layer
 
     # Rotate floating selection if needed
     angles = {90: gimpfu.ROTATE_90,
               180: gimpfu.ROTATE_180,
-              270: gimpfu.ROTATE_270}
+              270: gimpfu.ROTATE_270}  # type: int
     if angle in angles:
-        rotation = angles[angle]
-        pdb.gimp_drawable_transform_rotate_simple(
-            floating, rotation, gimpfu.FALSE, 0, 0, gimpfu.FALSE)
+        rotation = angles[angle]  # type: int
+        pdb.gimp_drawable_transform_rotate_simple(floating, rotation,
+                                                  gimpfu.FALSE, 0, 0,
+                                                  gimpfu.FALSE)
 
     # Move floating selection into position and anchor it
     move_drawable_to(floating, dst_corner, dst_x, dst_y)
     pdb.gimp_floating_sel_anchor(floating)
 
 
-def draw_mark(image, directions, x0, y0, size, distance):
+def draw_mark(image,            # type: gimp.Image
+              directions,       # type: List[Direction]
+              x0,               # type: int
+              y0,               # type: int
+              size,             # type: int
+              distance          # type: int
+              ):
+    # type: (...) -> None
     """Draws a mark at position where one must cut or fold the paper."""
-    x, y, width, height = 0, 0, 0, 0
 
-    for direction in directions:
+    x, y, width, height = 0, 0, 0, 0  # type: int, int, int, int
+
+    for direction in directions:  # type: Direction
         if direction == Direction.UP:
             x = x0 - 1
             y = y0 - distance - size
@@ -142,14 +184,20 @@ def draw_mark(image, directions, x0, y0, size, distance):
             gimp.message("Invalid direction %s" % repr(direction))
             return
 
-        pdb.gimp_image_select_rectangle(
-            image, gimpfu.CHANNEL_OP_REPLACE, x, y, width, height)
+        pdb.gimp_image_select_rectangle(image, gimpfu.CHANNEL_OP_REPLACE,
+                                        x, y, width, height)
         pdb.gimp_edit_fill(image.active_layer, gimpfu.FILL_FOREGROUND)
         pdb.gimp_selection_none(image)
 
 
-def template_coordinates(box_width, box_height, box_depth):
-    """Calculates a few important coordinates in the template image given the box size."""
+def template_coordinates(box_width,   # type: int
+                         box_height,  # type: int
+                         box_depth    # type: int
+                         ):
+    # type: (...) -> Tuple[List[int], List[int]]
+    """Calculates a few important coordinates in the template image given
+    the box size."""
+
     # The template layout looks like this:
     #
     #    x0         x1         x2        x3         x4
@@ -171,26 +219,34 @@ def template_coordinates(box_width, box_height, box_depth):
     #     |<------->|<-------->|<------->|<-------->|
     #        depth     width      depth     width
 
-    x0 = 0
-    x1 = x0 + box_depth
-    x2 = x1 + box_width
-    x3 = x2 + box_depth
-    x4 = x3 + box_width
+    x0 = 0                      # type: int
+    x1 = x0 + box_depth         # type: int
+    x2 = x1 + box_width         # type: int
+    x3 = x2 + box_depth         # type: int
+    x4 = x3 + box_width         # type: int
 
-    y0 = 0
-    y1 = y0 + box_depth
-    y2 = y1 + box_height // 2
-    y3 = y1 + box_height
-    y4 = y3 + box_depth
+    y0 = 0                      # type: int
+    y1 = y0 + box_depth         # type: int
+    y2 = y1 + box_height // 2   # type: int
+    y3 = y1 + box_height        # type: int
+    y4 = y3 + box_depth         # type: int
 
     return ((x0, x1, x2, x3, x4), (y0, y1, y2, y3, y4))
 
 
-def wrap_coordinates(box_width, box_height, box_depth,
-                     thickness, inside_size, flap_size,
-                     crop_mark_size, crop_mark_distance):
+def wrap_coordinates(box_width,            # type: int
+                     box_height,           # type: int
+                     box_depth,            # type: int
+                     thickness,            # type: int
+                     inside_size,          # type: int
+                     flap_size,            # type: int
+                     crop_mark_size,       # type: int
+                     crop_mark_distance    # type: int
+                     ):
+    # type: (...) -> Tuple[List[int], List[int]]
     """Calculates a few important coordinates in the wrap image
     given the box size and a few other dimensions."""
+
     # The wrap layout looks like this:
     #     0   x1      x2 x3       x4  x5           x6  x7      x8 x9      x10 x11
     #
@@ -226,83 +282,98 @@ def wrap_coordinates(box_width, box_height, box_depth,
     #
     # y11                         |   |            |   |
 
-    half_box_height = box_height // 2
+    half_box_height = box_height // 2                # type: int
 
-    x1 = crop_mark_size + crop_mark_distance
-    x2 = x1 + inside_size
-    x3 = x2 + thickness
-    x5 = x3 + half_box_height
-    x4 = x5 - flap_size
-    x6 = x5 + box_width
-    x7 = x6 + flap_size
-    x8 = x6 + half_box_height
-    x9 = x8 + thickness
-    x10 = x9 + inside_size
-    x11 = x10 + crop_mark_distance + crop_mark_size
+    x1 = crop_mark_size + crop_mark_distance         # type: int
+    x2 = x1 + inside_size                            # type: int
+    x3 = x2 + thickness                              # type: int
+    x5 = x3 + half_box_height                        # type: int
+    x4 = x5 - flap_size                              # type: int
+    x6 = x5 + box_width                              # type: int
+    x7 = x6 + flap_size                              # type: int
+    x8 = x6 + half_box_height                        # type: int
+    x9 = x8 + thickness                              # type: int
+    x10 = x9 + inside_size                           # type: int
+    x11 = x10 + crop_mark_distance + crop_mark_size  # type: int
 
-    y1 = crop_mark_size + crop_mark_distance
-    y2 = y1 + inside_size
-    y3 = y2 + thickness
-    y4 = y3 + half_box_height
-    y5 = y4 + flap_size
-    y7 = y4 + box_depth
-    y6 = y7 - flap_size
-    y8 = y7 + half_box_height
-    y9 = y8 + thickness
-    y10 = y9 + inside_size
-    y11 = y10 + crop_mark_distance + crop_mark_size
+    y1 = crop_mark_size + crop_mark_distance         # type: int
+    y2 = y1 + inside_size                            # type: int
+    y3 = y2 + thickness                              # type: int
+    y4 = y3 + half_box_height                        # type: int
+    y5 = y4 + flap_size                              # type: int
+    y7 = y4 + box_depth                              # type: int
+    y6 = y7 - flap_size                              # type: int
+    y8 = y7 + half_box_height                        # type: int
+    y9 = y8 + thickness                              # type: int
+    y10 = y9 + inside_size                           # type: int
+    y11 = y10 + crop_mark_distance + crop_mark_size  # type: int
 
     return ((0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11),
             (0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11))
 
 
-def create_template(box_width_mm, box_height_mm, box_depth_mm):
+def create_template(box_width_mm,   # type: float
+                    box_height_mm,  # type: float
+                    box_depth_mm    # type: float
+                    ):
+    # type: (...) -> None
     """Creates an empty template image given the box size."""
-    with DefaultContext():
-        box_width = mm_to_px(box_width_mm)
-        box_height = mm_to_px(box_height_mm)
-        box_depth = mm_to_px(box_depth_mm)
 
-        xs, ys = template_coordinates(box_width, box_height, box_depth)
-        image_width = xs[-1] - xs[0]
-        image_height = ys[-1] - ys[0]
+    with DefaultContext():
+        box_width = mm_to_px(box_width_mm)    # type: int
+        box_height = mm_to_px(box_height_mm)  # type: int
+        box_depth = mm_to_px(box_depth_mm)    # type: int
+
+        xs, ys = template_coordinates(box_width, box_height, box_depth)  # type: List[int], List[int]
+        image_width = xs[-1] - xs[0]   # type: int
+        image_height = ys[-1] - ys[0]  # type: int
 
         # Create a template image with one transparent layer
-        image = gimp.Image(image_width, image_height)
+        image = gimp.Image(image_width, image_height)  # type: gimp.Image
 
         with PausedUndo(image):
-            layer = gimp.Layer(image, "Template", image_width, image_height,
-                               gimpfu.RGBA_IMAGE, 100, gimpfu.NORMAL_MODE)
+            layer = gimp.Layer(image,
+                               "Template",
+                               image_width,
+                               image_height,
+                               gimpfu.RGBA_IMAGE,
+                               100,
+                               gimpfu.NORMAL_MODE)  # type: gimp.Layer
             image.add_layer(layer, 0)
 
             # Create guides
-            for x in xs:
+            for x in xs:        # type: int
                 image.add_vguide(x)
-            for y in ys:
+            for y in ys:        # type: int
                 image.add_hguide(y)
 
             # Fill the areas where the graphics go with white
             pdb.gimp_selection_none(image)
             pdb.gimp_progress_pulse()
-            pdb.gimp_image_select_rectangle(
-                image, gimpfu.CHANNEL_OP_ADD, xs[0], ys[1], image_width, ys[3]-ys[1])
+            pdb.gimp_image_select_rectangle(image, gimpfu.CHANNEL_OP_ADD,
+                                            xs[0], ys[1],
+                                            image_width, ys[3]-ys[1])
             pdb.gimp_progress_pulse()
-            pdb.gimp_image_select_rectangle(
-                image, gimpfu.CHANNEL_OP_ADD, xs[1], ys[0], xs[2]-xs[1], image_height)
+            pdb.gimp_image_select_rectangle(image, gimpfu.CHANNEL_OP_ADD,
+                                            xs[1], ys[0],
+                                            xs[2]-xs[1], image_height)
             pdb.gimp_edit_fill(layer, gimpfu.FILL_WHITE)
             pdb.gimp_selection_none(image)
 
-            # Put some text in the center a rectangle
             def put_text(text, left, right, top, bottom):
+                """Puts some text in the center of a rectangle."""
+
                 pdb.gimp_progress_pulse()
-                text_size = DPI / 4  # quarter inch
+                text_size = DPI / 4  # type: int
                 text_layer = pdb.gimp_text_layer_new(
-                    image, text, "sans-serif", text_size, gimpfu.PIXELS)
+                    image, text, "sans-serif", text_size,
+                    gimpfu.PIXELS)  # type: gimp.Layer
                 image.add_layer(text_layer, 0)
                 move_drawable_to(text_layer, Corner.CENTER,
-                                 (left + right) // 2, (top + bottom) // 2)
-                pdb.gimp_image_merge_down(
-                    image, text_layer, gimpfu.CLIP_TO_BOTTOM_LAYER)
+                                 (left + right) // 2,
+                                 (top + bottom) // 2)
+                pdb.gimp_image_merge_down(image, text_layer,
+                                          gimpfu.CLIP_TO_BOTTOM_LAYER)
 
             put_text("TOP", xs[1], xs[2], ys[0], ys[1])
             put_text("LEFT", xs[0], xs[1], ys[1], ys[3])
@@ -322,35 +393,46 @@ def create_template(box_width_mm, box_height_mm, box_depth_mm):
     gimp.displays_flush()
 
 
-def create_wraps(src_image,
-                 box_width_mm, box_height_mm, box_depth_mm,
-                 thickness_mm, flap_size_mm, inside_size_mm,
-                 crop_mark_size_mm, crop_mark_distance_mm):
+def create_wraps(src_image,             # type: gimp.Image
+                 box_width_mm,          # type: float
+                 box_height_mm,         # type: float
+                 box_depth_mm,          # type: float
+                 thickness_mm,          # type: float
+                 flap_size_mm,          # type: float
+                 inside_size_mm,        # type: float
+                 crop_mark_size_mm,     # type: float
+                 crop_mark_distance_mm  # type: float
+                 ):
+    # type: (...) -> None
     """Creates two wrap images from a template image."""
-    # Convert the dimensions from mm to px
-    box_width = mm_to_px(box_width_mm)
-    box_height = mm_to_px(box_height_mm)
-    box_depth = mm_to_px(box_depth_mm)
-    thickness = mm_to_px(thickness_mm)
-    flap_size = mm_to_px(flap_size_mm)
-    inside_size = mm_to_px(inside_size_mm)
-    crop_mark_size = mm_to_px(crop_mark_size_mm)
-    crop_mark_distance = mm_to_px(crop_mark_distance_mm)
 
-    half_box_height = box_height // 2
-    half_box_height_plus_extra = half_box_height + thickness + inside_size
+    # Convert the dimensions from mm to px
+    box_width = mm_to_px(box_width_mm)                    # type: int
+    box_height = mm_to_px(box_height_mm)                  # type: int
+    box_depth = mm_to_px(box_depth_mm)                    # type: int
+    thickness = mm_to_px(thickness_mm)                    # type: int
+    flap_size = mm_to_px(flap_size_mm)                    # type: int
+    inside_size = mm_to_px(inside_size_mm)                # type: int
+    crop_mark_size = mm_to_px(crop_mark_size_mm)          # type: int
+    crop_mark_distance = mm_to_px(crop_mark_distance_mm)  # type: int
+
+    half_box_height = box_height // 2  # type: int
+    half_box_height_plus_extra = \
+        half_box_height + thickness + inside_size  # type: int
 
     # Coordinates in the source image
-    src_xs, src_ys = template_coordinates(box_width, box_height, box_depth)
-    src_image_width = src_xs[-1] - src_xs[0]
-    src_image_height = src_ys[-1] - src_ys[0]
+    src_xs, src_ys = template_coordinates(
+        box_width, box_height, box_depth)  # type: int, int
+    src_image_width = src_xs[-1] - src_xs[0]   # type: int
+    src_image_height = src_ys[-1] - src_ys[0]  # type: int
 
     # Coordinates in the destination images
-    dst_xs, dst_ys = wrap_coordinates(box_width, box_height, box_depth,
-                                      thickness, inside_size, flap_size,
-                                      crop_mark_size, crop_mark_distance)
-    dst_image_width = dst_xs[-1] - dst_xs[0]
-    dst_image_height = dst_ys[-1] - dst_ys[0]
+    dst_xs, dst_ys = wrap_coordinates(
+        box_width, box_height, box_depth,
+        thickness, inside_size, flap_size,
+        crop_mark_size, crop_mark_distance)    # type: List[int], List[int]
+    dst_image_width = dst_xs[-1] - dst_xs[0]   # type: int
+    dst_image_height = dst_ys[-1] - dst_ys[0]  # type: int
 
     # Make sure we have the right dimensions
     if src_image.width != src_image_width or \
@@ -370,20 +452,25 @@ def create_wraps(src_image,
 
     # Draw stuff onto both destination images in the same way
     def draw(dst_image, copy_and_rotate_definitions):
+        # type: (gimp.Image, List[Tuple[int, int, int, int, int, int, int, int]]) -> None
         """Copies regions from the input image to a wrap image."""
+
         dst_layer = gimp.Layer(dst_image, "Wrap", dst_image_width,
-                               dst_image_height, gimpfu.RGB_IMAGE, 100, gimpfu.NORMAL_MODE)
+                               dst_image_height, gimpfu.RGB_IMAGE,
+                               100, gimpfu.NORMAL_MODE)  # type: gimp.Layer
         dst_layer.fill(gimpfu.FILL_WHITE)
         dst_image.add_layer(dst_layer, 0)
 
         # Add guides
-        for x in dst_xs:
+        for x in dst_xs:        # type: int
             dst_image.add_vguide(x)
-        for y in dst_ys:
+        for y in dst_ys:        # type: int
             dst_image.add_hguide(y)
 
-        # Take the layers from the template and move and rotate them into position
+        # Take the layers from the template and move and rotate them
+        # into position
         for d in copy_and_rotate_definitions:
+            # type: Tuple[int, int, int, int, int, int, Corner, int]
             pdb.gimp_progress_pulse()
             copy_and_rotate_rectangle(
                 src_image,      # src_image
@@ -398,23 +485,35 @@ def create_wraps(src_image,
                 d[6],           # dst_corner
                 d[7])           # rotation_angle
 
-        # Copy strips from the sides to create the flaps on the front and the back
+        # Copy strips from the sides to create the flaps on the front
+        # and the back
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
-            dst_image, dst_xs[1], dst_ys[4], half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[5], dst_ys[4], Corner.BOTTOM_RIGHT, 90)
+            dst_image, dst_xs[1], dst_ys[4],
+            half_box_height_plus_extra, flap_size,
+            dst_image, dst_layer, dst_xs[5], dst_ys[4],
+            Corner.BOTTOM_RIGHT, 90)
+
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
-            dst_image, dst_xs[1], dst_ys[6], half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[5], dst_ys[7], Corner.TOP_RIGHT, 270)
+            dst_image, dst_xs[1], dst_ys[6],
+            half_box_height_plus_extra, flap_size,
+            dst_image, dst_layer, dst_xs[5], dst_ys[7],
+            Corner.TOP_RIGHT, 270)
+
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
-            dst_image, dst_xs[6], dst_ys[4], half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[6], dst_ys[4], Corner.BOTTOM_LEFT, 270)
+            dst_image, dst_xs[6], dst_ys[4],
+            half_box_height_plus_extra, flap_size,
+            dst_image, dst_layer, dst_xs[6], dst_ys[4],
+            Corner.BOTTOM_LEFT, 270)
+
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
-            dst_image, dst_xs[6], dst_ys[6], half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[6], dst_ys[7], Corner.TOP_LEFT, 90)
+            dst_image, dst_xs[6], dst_ys[6],
+            half_box_height_plus_extra, flap_size,
+            dst_image, dst_layer, dst_xs[6], dst_ys[7],
+            Corner.TOP_LEFT, 90)
 
         # Marks for cutting and folding
         draw_mark(dst_image, (Direction.UP, Direction.LEFT),
@@ -464,7 +563,7 @@ def create_wraps(src_image,
         # Back
         (src_xs[3], src_ys[1], box_width, half_box_height_plus_extra,
          dst_xs[5], dst_ys[4], Corner.BOTTOM_LEFT, 180),
-    )
+    )   # type: List[Tuple[int, int, int, int, int, int, Corner, int]]
 
     copy_and_rotate_definitions_bottom = (
         # Left
@@ -482,15 +581,19 @@ def create_wraps(src_image,
         # Bottom
         (src_xs[1], src_ys[3], box_width, box_depth,
          dst_xs[5], dst_ys[4], Corner.TOP_LEFT, 0),
-    )
+    )   # type: List[Tuple[int, int, int, int, int, int, Corner, int]]
 
     with DefaultContext():
-        dst_image_top = gimp.Image(dst_image_width, dst_image_height, gimpfu.RGB)
+        dst_image_top = gimp.Image(dst_image_width,
+                                   dst_image_height,
+                                   gimpfu.RGB)  # type: gimp.Image
         with PausedUndo(dst_image_top):
             draw(dst_image_top, copy_and_rotate_definitions_top)
             gimp.Display(dst_image_top)
 
-        dst_image_bottom = gimp.Image(dst_image_width, dst_image_height, gimpfu.RGB)
+        dst_image_bottom = gimp.Image(dst_image_width,
+                                      dst_image_height,
+                                      gimpfu.RGB)  # type: gimp.Image
         with PausedUndo(dst_image_bottom):
             draw(dst_image_bottom, copy_and_rotate_definitions_bottom)
             gimp.Display(dst_image_bottom)
@@ -504,9 +607,11 @@ PLUGIN_MENU = "<Toolbox>/Filters/Boardgames/Box Wrap/"
 
 gimpfu.register(
     "Boxwrap_Create_Template",
-    "Box width: Distance between left and right face\n"
-    "Box height: Distance between top and bottom face\n"
-    "Box depth: Distance between front and back face\n",
+    """
+    Box width: Distance between left and right face
+    Box height: Distance between top and bottom face
+    Box depth: Distance between front and back face
+    """,
     "Create an empty template image for the printable box wrap",
     PLUGIN_AUTHOR,
     PLUGIN_COPYRIGHT,
@@ -514,9 +619,15 @@ gimpfu.register(
     PLUGIN_MENU + "Create empty template...",
     "",
     [
-        (gimpfu.PF_ADJUSTMENT, "width", "Box width [mm]", 75, (10, 500, 1)),
-        (gimpfu.PF_ADJUSTMENT, "height", "Box height [mm]", 104, (10, 500, 1)),
-        (gimpfu.PF_ADJUSTMENT, "depth", "Box depth [mm]", 100, (10, 500, 1))
+        (gimpfu.PF_ADJUSTMENT, "width",
+         "Box width [mm]",
+         75, (10, 500, 1)),
+        (gimpfu.PF_ADJUSTMENT, "height",
+         "Box height [mm]",
+         104, (10, 500, 1)),
+        (gimpfu.PF_ADJUSTMENT, "depth",
+         "Box depth [mm]",
+         100, (10, 500, 1))
     ],
     [],
     create_template
@@ -524,32 +635,48 @@ gimpfu.register(
 
 gimpfu.register(
     "Boxwrap_Create_Wraps",
-    "The dimensions must be the same as in the template dialog!\n"
-    "\n"
-    "Box width: Distance between left and right face\n"
-    "Box height: Distance between top and bottom face\n"
-    "Box depth: Distance between front and back face\n",
-    "Create the printable wraps for both halves of the box from the template image",
+    """
+    The dimensions must be the same as in the template dialog!
+
+    Box width: Distance between left and right face
+    Box height: Distance between top and bottom face
+    Box depth: Distance between front and back face
+    """,
+    "Create the printable wraps for both halves of the box "
+    "from the template image",
     PLUGIN_AUTHOR,
     PLUGIN_COPYRIGHT,
     PLUGIN_DATE,
     PLUGIN_MENU + "Create wraps from template...",
     "RGB*",
     [
-        (gimpfu.PF_IMAGE, "image", "Template with six layers", 0),
-        (gimpfu.PF_ADJUSTMENT, "width", "Box width [mm]", 75, (10, 500, 1)),
-        (gimpfu.PF_ADJUSTMENT, "height", "Box height [mm]", 104, (10, 500, 1)),
-        (gimpfu.PF_ADJUSTMENT, "depth", "Box depth [mm]", 100, (10, 500, 1)),
+        (gimpfu.PF_IMAGE, "image",
+         "Template with six layers",
+         0),
+        (gimpfu.PF_ADJUSTMENT, "width",
+         "Box width [mm]",
+         75, (10, 500, 1)),
+        (gimpfu.PF_ADJUSTMENT, "height",
+         "Box height [mm]",
+         104, (10, 500, 1)),
+        (gimpfu.PF_ADJUSTMENT, "depth",
+         "Box depth [mm]",
+         100, (10, 500, 1)),
         (gimpfu.PF_ADJUSTMENT, "thickness",
-         "Cardboard thickness [mm]", 2.0, (0.5, 6.0, 0.5)),
+         "Cardboard thickness [mm]",
+         2.0, (0.5, 6.0, 0.5)),
         (gimpfu.PF_ADJUSTMENT, "flap_size",
-         "Width of the flaps [mm]", 10.0, (1.0, 20.0, 1.0)),
+         "Width of the flaps [mm]",
+         10.0, (1.0, 20.0, 1.0)),
         (gimpfu.PF_ADJUSTMENT, "inside_size",
-         "Amount of paper inside the box [mm]", 15.0, (1.0, 50.0, 1.0)),
+         "Amount of paper inside the box [mm]",
+         15.0, (1.0, 50.0, 1.0)),
         (gimpfu.PF_ADJUSTMENT, "crop_mark_size",
-         "Size of the crop marks [mm]", 5.0, (1.0, 20.0, 1.0)),
+         "Size of the crop marks [mm]",
+         5.0, (1.0, 20.0, 1.0)),
         (gimpfu.PF_ADJUSTMENT, "crop_mark_distance",
-         "Distance between the crop marks and the image [mm]", 2.0, (0.0, 10.0, 1.0))
+         "Distance between the crop marks and the image [mm]",
+         2.0, (0.0, 10.0, 1.0))
     ],
     [],
     create_wraps
