@@ -112,7 +112,6 @@ def copy_and_rotate_rectangle(src_image,   # type: gimp.Image
                               src_y,       # type: int
                               src_width,   # type: int
                               src_height,  # type: int
-                              dst_image,   # type: gimp.Image
                               dst_layer,   # type: gimp.Layer
                               dst_x,       # type: int
                               dst_y,       # type: int
@@ -478,7 +477,6 @@ def create_wraps(src_image,             # type: gimp.Image
                 d[1],           # src_y
                 d[2],           # src_width
                 d[3],           # src_height
-                dst_image,      # dst_image
                 dst_layer,      # dst_layer
                 d[4],           # dst_x
                 d[5],           # dst_y
@@ -491,28 +489,28 @@ def create_wraps(src_image,             # type: gimp.Image
         copy_and_rotate_rectangle(
             dst_image, dst_xs[1], dst_ys[4],
             half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[5], dst_ys[4],
+            dst_layer, dst_xs[5], dst_ys[4],
             Corner.BOTTOM_RIGHT, 90)
 
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
             dst_image, dst_xs[1], dst_ys[6],
             half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[5], dst_ys[7],
+            dst_layer, dst_xs[5], dst_ys[7],
             Corner.TOP_RIGHT, 270)
 
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
             dst_image, dst_xs[6], dst_ys[4],
             half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[6], dst_ys[4],
+            dst_layer, dst_xs[6], dst_ys[4],
             Corner.BOTTOM_LEFT, 270)
 
         pdb.gimp_progress_pulse()
         copy_and_rotate_rectangle(
             dst_image, dst_xs[6], dst_ys[6],
             half_box_height_plus_extra, flap_size,
-            dst_image, dst_layer, dst_xs[6], dst_ys[7],
+            dst_layer, dst_xs[6], dst_ys[7],
             Corner.TOP_LEFT, 90)
 
         # Marks for cutting and folding
