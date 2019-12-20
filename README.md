@@ -10,7 +10,7 @@ plug-in automates some parts of the process.
 
 First make sure that your GIMP version supports Python plug-ins.  If
 you use GIMP for Windows you should be fine.  If you use GIMP for
-Linux you might have to install an additional package to enable python
+Linux you might have to install an additional package to enable Python
 support for GIMP.  I had to install gimp-python on Ubuntu 19.10.
 
 Next locate your GIMP plug-in folder.  In GIMP's menu bar click on
@@ -26,7 +26,7 @@ Filters/Boardgames/Box Wrap.
 Creating the printable box wrap is a two step process.  In the first
 step you will create an unwrapped version of the box wrap.  In the
 second step the plug-in will create two printable versions of the box
-box wrap, one for the top part of the box and one for the bottom part.
+wrap, one for the top part of the box and one for the bottom part.
 
 ### Step 1: Creating a template
 
@@ -44,9 +44,9 @@ new template image for the unwrapped box with 300 dpi resolution.
 The templates consists of one white rectangle for each side of the
 box.  The rectangles are labeled TOP, LEFT, FRONT, RIGHT, BACK, and
 BOTTOM.  In the top left corner of the template you can see the
-physical dimensions of the box.  You will need those dimensions later
-in step 2.  There are several guides that mark the edges and the
-equator of the box.
+physical dimensions of the box.  You will need these later in step 2.
+There are several guides that mark the edges and the equator of the
+box.
 
 Fill in the graphics however you like.  You can add or remove any
 number of guides and layers.  Only the size of the image must remain
