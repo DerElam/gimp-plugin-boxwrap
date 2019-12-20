@@ -444,7 +444,7 @@ def create_wraps(src_image,             # type: gimp.Image
                         px_to_mm(src_image_width),
                         px_to_mm(src_image_height),
                         src_image.width,
-                        src_image_height,
+                        src_image.height,
                         px_to_mm(src_image.width),
                         px_to_mm(src_image.height)))
         return
