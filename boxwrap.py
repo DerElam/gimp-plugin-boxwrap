@@ -2,7 +2,6 @@
 wrap for board game boxes.
 """
 
-from typing import List, Tuple
 from gimpfu import gimp, pdb
 import gimpfu
 
@@ -147,7 +146,7 @@ def copy_and_rotate_rectangle(src_image,   # type: gimp.Image
 
 
 def draw_mark(image,            # type: gimp.Image
-              directions,       # type: List[Direction]
+              directions,
               x0,               # type: int
               y0,               # type: int
               size,             # type: int
@@ -193,7 +192,6 @@ def template_coordinates(box_width,   # type: int
                          box_height,  # type: int
                          box_depth    # type: int
                          ):
-    # type: (...) -> Tuple[List[int], List[int]]
     """Calculates a few important coordinates in the template image given
     the box size."""
 
@@ -242,7 +240,6 @@ def wrap_coordinates(box_width,            # type: int
                      crop_mark_size,       # type: int
                      crop_mark_distance    # type: int
                      ):
-    # type: (...) -> Tuple[List[int], List[int]]
     """Calculates a few important coordinates in the wrap image
     given the box size and a few other dimensions."""
 
@@ -323,7 +320,7 @@ def create_template(box_width_mm,   # type: float
         box_height = mm_to_px(box_height_mm)  # type: int
         box_depth = mm_to_px(box_depth_mm)    # type: int
 
-        xs, ys = template_coordinates(box_width, box_height, box_depth)  # type: List[int], List[int]
+        xs, ys = template_coordinates(box_width, box_height, box_depth)
         image_width = xs[-1] - xs[0]   # type: int
         image_height = ys[-1] - ys[0]  # type: int
 
@@ -429,7 +426,7 @@ def create_wraps(src_image,             # type: gimp.Image
     dst_xs, dst_ys = wrap_coordinates(
         box_width, box_height, box_depth,
         thickness, inside_size, flap_size,
-        crop_mark_size, crop_mark_distance)    # type: List[int], List[int]
+        crop_mark_size, crop_mark_distance)
     dst_image_width = dst_xs[-1] - dst_xs[0]   # type: int
     dst_image_height = dst_ys[-1] - dst_ys[0]  # type: int
 
@@ -451,7 +448,6 @@ def create_wraps(src_image,             # type: gimp.Image
 
     # Draw stuff onto both destination images in the same way
     def draw(dst_image, copy_and_rotate_definitions):
-        # type: (gimp.Image, List[Tuple[int, int, int, int, int, int, int, int]]) -> None
         """Copies regions from the input image to a wrap image."""
 
         dst_layer = gimp.Layer(dst_image, "Wrap", dst_image_width,
@@ -469,7 +465,6 @@ def create_wraps(src_image,             # type: gimp.Image
         # Take the layers from the template and move and rotate them
         # into position
         for d in copy_and_rotate_definitions:
-            # type: Tuple[int, int, int, int, int, int, Corner, int]
             pdb.gimp_progress_pulse()
             copy_and_rotate_rectangle(
                 src_image,      # src_image
@@ -561,7 +556,7 @@ def create_wraps(src_image,             # type: gimp.Image
         # Back
         (src_xs[3], src_ys[1], box_width, half_box_height_plus_extra,
          dst_xs[5], dst_ys[4], Corner.BOTTOM_LEFT, 180),
-    )   # type: List[Tuple[int, int, int, int, int, int, Corner, int]]
+    )
 
     copy_and_rotate_definitions_bottom = (
         # Left
@@ -579,7 +574,7 @@ def create_wraps(src_image,             # type: gimp.Image
         # Bottom
         (src_xs[1], src_ys[3], box_width, box_depth,
          dst_xs[5], dst_ys[4], Corner.TOP_LEFT, 0),
-    )   # type: List[Tuple[int, int, int, int, int, int, Corner, int]]
+    )
 
     with DefaultContext():
         dst_image_top = gimp.Image(dst_image_width,
