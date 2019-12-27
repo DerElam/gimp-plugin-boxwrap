@@ -184,7 +184,7 @@ def draw_mark(image,            # type: gimp.Image
 
         pdb.gimp_image_select_rectangle(image, gimpfu.CHANNEL_OP_REPLACE,
                                         x, y, width, height)
-        pdb.gimp_edit_fill(image.active_layer, gimpfu.FILL_FOREGROUND)
+        pdb.gimp_edit_fill(image.active_layer, gimpfu.FOREGROUND_FILL)
         pdb.gimp_selection_none(image)
 
 
@@ -353,7 +353,7 @@ def create_template(box_width_mm,   # type: float
             pdb.gimp_image_select_rectangle(image, gimpfu.CHANNEL_OP_ADD,
                                             xs[1], ys[0],
                                             xs[2]-xs[1], image_height)
-            pdb.gimp_edit_fill(layer, gimpfu.FILL_WHITE)
+            pdb.gimp_edit_fill(layer, gimpfu.WHITE_FILL)
             pdb.gimp_selection_none(image)
 
             def put_text(text, left, right, top, bottom):
@@ -453,7 +453,7 @@ def create_wraps(src_image,             # type: gimp.Image
         dst_layer = gimp.Layer(dst_image, "Wrap", dst_image_width,
                                dst_image_height, gimpfu.RGB_IMAGE,
                                100, gimpfu.NORMAL_MODE)  # type: gimp.Layer
-        dst_layer.fill(gimpfu.FILL_WHITE)
+        dst_layer.fill(gimpfu.WHITE_FILL)
         dst_image.add_layer(dst_layer, 0)
 
         # Add guides
